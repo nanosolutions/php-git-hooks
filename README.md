@@ -12,6 +12,10 @@ git clone https://github.com/intaro/php-git-hooks
 cd php-git-hooks
 php -r "readfile('https://getcomposer.org/installer');" | php
 ./composer.phar install
+
+# Execute setup.sh to clone Symfony2 coding standard to PHPCS
+./setup.sh
+
 ```
 
 Make symlink to the `pre-commit` file:
@@ -20,6 +24,7 @@ Make symlink to the `pre-commit` file:
 cd some/symfony/project/.git/hooks
 ln -s some/path/php-git-hooks/pre-commit pre-commit
 ```
+
 
 ## pre-commit
 
