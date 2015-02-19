@@ -12,6 +12,32 @@ class CodeQualityTool extends Application
 {
     private $output;
     private $input;
+    /**
+     * forbiddenDebugCodes
+     * Note: forbidden must be array
+     *
+     * @var array
+     */
+    private $forbiddenDebugCodes = [
+        'js/coffee' => [
+            'filePattern' => '\.(js|coffee)(\..+)?$',
+            'forbidden' => ['console.log', 'debugger\;']
+        ],
+        'php' => [
+            'filePattern' => '\.(php)(\..+)?$',
+            'forbidden' => [
+                'var_dump',
+                'ladybug_dump',
+                'print_r'
+            ]
+        ],
+        'twig' => [
+            'filePattern' => '\.(html\.twig)$',
+            'forbidden' => [
+                'dump'
+            ]
+        ]
+    ];
 
     const PHP_FILES = '/(\.php)$/';
     const PHP_FILES_IN_SRC = '/^src\/(.*)(\.php)$/';
@@ -32,7 +58,7 @@ class CodeQualityTool extends Application
         $files = $this->extractCommitedFiles();
 
         $output->writeln('<info>Check composer</info>');
-        //$this->checkComposer($files);
+        $this->checkComposer($files);
 
         $output->writeln('<info>Running PHPLint</info>');
         if (!$this->phpLint($files)) {
@@ -47,6 +73,14 @@ class CodeQualityTool extends Application
         $output->writeln('<info>Checking code style with PHPCS</info>');
         if (!$this->codeStylePsr($files)) {
             throw new Exception(sprintf('There are PHPCS coding standards violations!'));
+        }
+
+        $output->writeln(sprintf(
+            '<info>Checking for forgotten debugs in %s</info>',
+            implode(', ', array_keys($this->forbiddenDebugCodes))
+        ));
+        if (!$this->checkDebugCode()) {
+            throw new Exception(sprintf('There is forgotten debug code!'));
         }
 
         $output->writeln('<info>Good job dude!</info>');
@@ -129,11 +163,11 @@ class CodeQualityTool extends Application
 
             $fixers = 'contrib';
             $processBuilder = new ProcessBuilder(array(
-                'php', 
-                __DIR__ . '/vendor/bin/php-cs-fixer', 
-                '--dry-run', 
-                '--verbose', 
-                'fix', 
+                'php',
+                __DIR__ . '/vendor/bin/php-cs-fixer',
+                '--dry-run',
+                '--verbose',
+                'fix',
                 $file,
                 '--fixers='.$fixers
             ));
@@ -164,13 +198,24 @@ class CodeQualityTool extends Application
                 continue;
             }
 
-            $processBuilder = new ProcessBuilder(array('php', __DIR__ . '/vendor/bin/phpcs', '--encoding=utf-8', '--standard=PSR2', $file));
+            $processBuilder = new ProcessBuilder(
+                array(
+                    'php',
+                    __DIR__ . '/vendor/bin/phpcs',
+                    '--encoding=utf-8',
+                    '--standard=PSR2',
+                    $file
+                )
+            );
             $processBuilder->setWorkingDirectory(getcwd());
             $phpCsFixer = $processBuilder->getProcess();
             $phpCsFixer->run();
 
             if (!$phpCsFixer->isSuccessful()) {
-                $this->output->writeln(sprintf('<error>%s</error>', trim($phpCsFixer->getOutput())));
+                $this->output->writeln(sprintf(
+                    '<error>%s</error>',
+                    trim($phpCsFixer->getOutput())
+                ));
 
                 if ($succeed) {
                     $succeed = false;
@@ -179,6 +224,63 @@ class CodeQualityTool extends Application
         }
 
         return $succeed;
+    }
+
+    private function checkDebugCode()
+    {
+        $succeed = true;
+
+        foreach ($this->forbiddenDebugCodes as $data) {
+            $response = $this->findDebugCode($data['forbidden'], $data['filePattern']);
+
+            if ($response['statusCode'] == 1) {
+                $this->output->writeln(
+                    sprintf(
+                        '<error>%s</error>',
+                        implode(PHP_EOL, $response['output'])
+                    )
+                );
+
+                $succeed = false;
+            }
+        }
+
+
+        return $succeed;
+    }
+
+    /**
+     * findDebugCode
+     *
+     * @param mixed  $forbidden
+     * @param string $filePattern
+     *
+     * @return array [int 'statusCode', array 'outputRows']
+     */
+    private function findDebugCode($forbidden, $filePattern)
+    {
+        $response = ['statusCode' => 0];
+
+        foreach ($forbidden as $snippet) {
+            if ($response['statusCode'] == 1) {
+                return $response;
+            }
+
+            $script = sprintf(
+                "git diff --cached --name-only | \
+                grep -E '%s' | \
+                GREP_COLOR='4;5;37;41' xargs grep --color --with-filename -n %s \
+                && echo 'COMMIT REJECTED Found %s references. \
+                Please remove them before commiting' && exit 1",
+                $filePattern,
+                $snippet,
+                $snippet
+            );
+
+            exec($script, $response['output'], $response['statusCode']);
+        }
+
+        return $response;
     }
 }
 
