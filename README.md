@@ -26,7 +26,9 @@ ln -s some/path/php-git-hooks/pre-commit pre-commit
 Checks the committed files:
 
 * PHP Syntax on PHP-errors (with PHPLint)
-* Check code style for compliance with the standard PSR2
+* Check code style for compliance with the standard PSR2 or Symfony2
+* composer.json must be commited with composer.lock
+* configurable language dependent debug code checks
 
 Based on `pre-commit` hook of [Carlos Buenosvinos](http://carlosbuenosvinos.com/write-your-git-hooks-in-php-and-keep-them-under-git-control/).
 

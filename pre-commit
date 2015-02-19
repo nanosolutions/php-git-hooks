@@ -14,7 +14,7 @@ class CodeQualityTool extends Application
     private $input;
     /**
      * forbiddenDebugCodes
-     * Note: forbidden must be array
+     * Note: forbidden must be array.
      *
      * @var array
      */
@@ -65,14 +65,14 @@ class CodeQualityTool extends Application
             throw new Exception('There are some PHP syntax errors!');
         }
 
-        $output->writeln('<info>Checking code style</info>');
-        if (!$this->codeStyle($files)) {
-            throw new Exception(sprintf('There are coding standards violations!'));
+        $output->writeln('<info>Checking Symfony2 coding standards</info>');
+        if (!$this->codingStandardsSf2($files)) {
+            throw new Exception(sprintf('There are Symfony2 coding standards violations!'));
         }
 
-        $output->writeln('<info>Checking code style with PHPCS</info>');
-        if (!$this->codeStylePsr($files)) {
-            throw new Exception(sprintf('There are PHPCS coding standards violations!'));
+        $output->writeln('<info>Checking Symfony2 (CodeSniffer)</info>');
+        if (!$this->codeSnifferSf2($files)) {
+            throw new Exception(sprintf('There are PHPCS Sf2 coding standards violations!'));
         }
 
         $output->writeln(sprintf(
@@ -150,7 +150,7 @@ class CodeQualityTool extends Application
         return $succeed;
     }
 
-    private function codeStyle(array $files)
+    private function codingStandardsSf2(array $files)
     {
         $succeed = true;
 
@@ -167,6 +167,7 @@ class CodeQualityTool extends Application
                 __DIR__.'/vendor/bin/php-cs-fixer',
                 '--dry-run',
                 '--verbose',
+                '--config=sf23',
                 'fix',
                 $file,
                 '--fixers='.$fixers,
@@ -188,7 +189,7 @@ class CodeQualityTool extends Application
         return $succeed;
     }
 
-    private function codeStylePsr(array $files)
+    private function codeSnifferSf2(array $files)
     {
         $succeed = true;
         $needle = self::PHP_FILES_IN_SRC;
@@ -203,7 +204,7 @@ class CodeQualityTool extends Application
                     'php',
                     __DIR__.'/vendor/bin/phpcs',
                     '--encoding=utf-8',
-                    '--standard=PSR2',
+                    '--standard=Symfony2',
                     $file,
                 )
             );
@@ -249,7 +250,7 @@ class CodeQualityTool extends Application
     }
 
     /**
-     * findDebugCode
+     * findDebugCode.
      *
      * @param mixed  $forbidden
      * @param string $filePattern
