@@ -161,7 +161,6 @@ class CodeQualityTool extends Application
                 continue;
             }
 
-            $fixers = 'contrib';
             $processBuilder = new ProcessBuilder(array(
                 'php',
                 __DIR__.'/vendor/bin/php-cs-fixer',
@@ -170,7 +169,6 @@ class CodeQualityTool extends Application
                 '--config=sf23',
                 'fix',
                 $file,
-                '--fixers='.$fixers,
             ));
 
             $processBuilder->setWorkingDirectory(getcwd());
