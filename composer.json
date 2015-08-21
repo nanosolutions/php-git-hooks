@@ -7,17 +7,16 @@
     ],
     "require": {
         "squizlabs/php_codesniffer": "1.5",
-        "escapestudios/symfony2-coding-standard": "2.*",
         "fabpot/php-cs-fixer": "@stable",
         "symfony/console": "@stable",
         "symfony/process": "@stable"
     },
     "scripts": {
         "post-install-cmd": [
-            "vendor/bin/phpcs --config-set installed_paths vendor/escapestudios/symfony2-coding-standard"
+            "./setup.sh"
         ],
         "post-update-cmd": [
-            "vendor/bin/phpcs --config-set installed_paths vendor/escapestudios/symfony2-coding-standard"
+            "./setup.sh"
         ]
     }
 }
