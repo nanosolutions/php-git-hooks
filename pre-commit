@@ -26,9 +26,11 @@ class CodeQualityTool extends Application
         'php' => [
             'filePattern' => '\.(php)(\..+)?$',
             'forbidden' => [
+                'dd',
                 'var_dump',
                 'ladybug_dump',
                 'print_r',
+                'die'
             ],
         ],
         'twig' => [
@@ -45,7 +47,7 @@ class CodeQualityTool extends Application
 
     public function __construct()
     {
-        parent::__construct('Code Quality Tool', '1.0.0');
+        parent::__construct('Code Quality Tool', '1.0.1');
     }
 
     public function doRun(InputInterface $input, OutputInterface $output)
@@ -53,7 +55,7 @@ class CodeQualityTool extends Application
         $this->input = $input;
         $this->output = $output;
 
-        $output->writeln('<fg=white;options=bold;bg=red>Intaro Code Quality Tool</fg=white;options=bold;bg=red>');
+        $output->writeln('<fg=white;options=bold;bg=red>Nano Code Quality Tool</fg=white;options=bold;bg=red>');
         $output->writeln('<info>Fetching files</info>');
         $files = $this->extractCommitedFiles();
 
@@ -66,13 +68,13 @@ class CodeQualityTool extends Application
         }
 
         $output->writeln('<info>Checking Symfony2 coding standards</info>');
-        if (!$this->codingStandardsSf2($files)) {
-            throw new Exception(sprintf('There are Symfony2 coding standards violations!'));
+        if (!$this->codingStandardsPSR2($files)) {
+            throw new Exception(sprintf('There are PSR2 coding standards violations!'));
         }
 
         $output->writeln('<info>Checking Symfony2 (CodeSniffer)</info>');
-        if (!$this->codeSnifferSf2($files)) {
-            throw new Exception(sprintf('There are PHPCS Sf2 coding standards violations!'));
+        if (!$this->codeSnifferPSR2($files)) {
+            throw new Exception(sprintf('There are PHPCS PSR2 coding standards violations!'));
         }
 
         $output->writeln(sprintf(
@@ -150,7 +152,7 @@ class CodeQualityTool extends Application
         return $succeed;
     }
 
-    private function codingStandardsSf2(array $files)
+    private function codingStandardsPSR2(array $files)
     {
         $succeed = true;
 
@@ -166,7 +168,7 @@ class CodeQualityTool extends Application
                 __DIR__.'/vendor/bin/php-cs-fixer',
                 '--dry-run',
                 '--verbose',
-                '--config=sf23',
+                '--config=psr2',
                 'fix',
                 $file,
             ));
@@ -187,7 +189,7 @@ class CodeQualityTool extends Application
         return $succeed;
     }
 
-    private function codeSnifferSf2(array $files)
+    private function codeSnifferPSR2(array $files)
     {
         $succeed = true;
         $needle = self::PHP_FILES_IN_SRC;
@@ -202,7 +204,7 @@ class CodeQualityTool extends Application
                     'php',
                     __DIR__.'/vendor/bin/phpcs',
                     '--encoding=utf-8',
-                    '--standard=Symfony2',
+                    '--standard=PSR2',
                     $file,
                 )
             );
