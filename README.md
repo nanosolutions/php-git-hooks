@@ -1,6 +1,6 @@
 # PHP Git Hooks
 
-The Git hooks for applying in the local repository of the PHP project. Include the `pre-commit` hook.
+The Git hooks for applying in the local repository of the PHP (Laravel) project. Include the `pre-commit` hook.
 
 ## Installation
 
@@ -31,7 +31,7 @@ ln -s some/path/php-git-hooks/pre-commit pre-commit
 Checks the committed files:
 
 * PHP Syntax on PHP-errors (with PHPLint)
-* Check code style for compliance with the standard PSR2 or Symfony2
+* Check code style for compliance with the standard PSR2
 * composer.json must be commited with composer.lock
 * configurable language dependent debug code checks
 

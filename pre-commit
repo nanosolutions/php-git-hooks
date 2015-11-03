@@ -26,23 +26,16 @@ class CodeQualityTool extends Application
         'php' => [
             'filePattern' => '\.(php)(\..+)?$',
             'forbidden' => [
-                'dd',
-                'var_dump',
-                'ladybug_dump',
-                'print_r',
-                'die'
+                'dd(',
+                'var_dump(',
+                'print_r(',
+                'die('
             ],
-        ],
-        'twig' => [
-            'filePattern' => '\.(html\.twig)$',
-            'forbidden' => [
-                'dump',
-            ],
-        ],
+        ]
     ];
 
     const PHP_FILES = '/(\.php)$/';
-    const PHP_FILES_IN_SRC = '/^src\/(.*)(\.php)$/';
+    const PHP_FILES_IN_SRC = '/^app\/(.*)(\.php)$/';
     const PHP_FILES_IN_CLASSES = '/^classes\/(.*)(\.php)$/';
 
     public function __construct()
@@ -67,15 +60,17 @@ class CodeQualityTool extends Application
             throw new Exception('There are some PHP syntax errors!');
         }
 
-        $output->writeln('<info>Checking Symfony2 coding standards</info>');
-        if (!$this->codingStandardsPSR2($files)) {
-            throw new Exception(sprintf('There are PSR2 coding standards violations!'));
-        }
-
-        $output->writeln('<info>Checking Symfony2 (CodeSniffer)</info>');
+        $output->writeln('<info>Checking PSR2 (CodeSniffer)</info>');
         if (!$this->codeSnifferPSR2($files)) {
             throw new Exception(sprintf('There are PHPCS PSR2 coding standards violations!'));
         }
+
+        // $output->writeln('<info>Checking PSR2 coding standards</info>');
+        // if (!$this->codingStandardsPSR2($files)) {
+        //     throw new Exception(sprintf('There are PSR2 coding standards violations!'));
+        // }
+
+
 
         $output->writeln(sprintf(
             '<info>Checking for forgotten debugs in %s</info>',
@@ -121,7 +116,11 @@ class CodeQualityTool extends Application
         }
 
         exec("git diff-index --cached --name-status $against | egrep '^(A|M)' | awk '{print $2;}'", $output);
-
+        foreach ($output as $key => $file) {
+              if($key != 0) {
+                $this->output->writeln(sprintf('<comment>%s</comment>', trim($file)));
+              }
+        }
         return $output;
     }
 
@@ -167,15 +166,17 @@ class CodeQualityTool extends Application
                 'php',
                 __DIR__.'/vendor/bin/php-cs-fixer',
                 '--dry-run',
-                '--verbose',
-                '--config=psr2',
+                //'--verbose',
                 'fix',
+                '--level=psr2',
                 $file,
             ));
 
             $processBuilder->setWorkingDirectory(getcwd());
             $phpCsFixer = $processBuilder->getProcess();
             $phpCsFixer->run();
+
+//            print_r($phpCsFixer);
 
             if (!$phpCsFixer->isSuccessful()) {
                 $this->output->writeln(sprintf('<error>%s</error>', trim($phpCsFixer->getOutput())));
@@ -194,6 +195,7 @@ class CodeQualityTool extends Application
         $succeed = true;
         $needle = self::PHP_FILES_IN_SRC;
 
+
         foreach ($files as $file) {
             if (!preg_match($needle, $file)) {
                 continue;
@@ -211,6 +213,8 @@ class CodeQualityTool extends Application
             $processBuilder->setWorkingDirectory(getcwd());
             $phpCsFixer = $processBuilder->getProcess();
             $phpCsFixer->run();
+
+
 
             if (!$phpCsFixer->isSuccessful()) {
                 $this->output->writeln(sprintf(
@@ -269,9 +273,9 @@ class CodeQualityTool extends Application
             $script = sprintf(
                 "git diff --cached --name-only | \
                 grep -E '%s' | \
-                GREP_COLOR='4;5;37;41' xargs grep --color --with-filename -n %s \
-                && echo 'COMMIT REJECTED Found %s references. \
-                Please remove them before commiting' && exit 1",
+                GREP_COLOR='4;5;37;41' xargs grep --color --with-filename -n '%s' \
+                && exit 0 \
+                || echo 'Commit REJECTED Found %s references. Please remove them before commiting' && exit 1",
                 $filePattern,
                 $snippet,
                 $snippet
@@ -280,7 +284,8 @@ class CodeQualityTool extends Application
             exec($script, $response['output'], $response['statusCode']);
         }
 
-        return $response;
+
+
     }
 }
 
